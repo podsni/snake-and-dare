@@ -2,8 +2,10 @@ import { Check, Shuffle, SkipForward, Timer } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { cardById, remainingCards } from '../game/deck.ts'
+import { wheelRotation } from '../game/juice.ts'
 import type { GameState } from '../game/types.ts'
 import { useGame } from '../store/gameStore.ts'
+import { audio } from '../utils/audio.ts'
 import { t } from '../utils/i18n.ts'
 import { Button } from './Button.tsx'
 import { Avatar } from './Avatar.tsx'
@@ -17,13 +19,22 @@ export function ChallengeCard({ game }: { game: GameState }) {
   const player = game.players[game.current]
   const card = game.pendingCardId ? cardById(game.pendingCardId) : undefined
   const [left, setLeft] = useState<number | null>(null)
+  const [spinning, setSpinning] = useState(false)
 
   useEffect(() => {
     setLeft(null)
-  }, [game.pendingCardId])
+    if (!card || reduce) {
+      setSpinning(false)
+      return
+    }
+    setSpinning(true)
+    const id = window.setTimeout(() => setSpinning(false), 1200)
+    return () => window.clearTimeout(id)
+  }, [game.pendingCardId, card, reduce])
 
   useEffect(() => {
     if (left === null || left <= 0) return
+    if (left <= 5) audio.play('tick')
     const id = window.setTimeout(() => setLeft((value) => (value === null ? null : value - 1)), 1000)
     return () => window.clearTimeout(id)
   }, [left])
@@ -56,6 +67,26 @@ export function ChallengeCard({ game }: { game: GameState }) {
             </h2>
           </div>
         </div>
+        {spinning && card ? (
+          <div className="mb-3 flex flex-col items-center" data-testid="choice-wheel">
+            <p className="mb-2 font-extrabold text-ink">{t(language, 'wheelSpin')}</p>
+            <div className="relative h-36 w-36">
+              <div
+                className="absolute inset-0 rounded-full border-4 border-ink transition-transform duration-1000 ease-out"
+                style={{
+                  transform: `rotate(${wheelRotation(card.type)}deg)`,
+                  background: 'conic-gradient(#7950F2 0 45deg, #FFD43B 45deg 90deg, #7950F2 90deg 135deg, #FFD43B 135deg 180deg, #7950F2 180deg 225deg, #FFD43B 225deg 270deg, #7950F2 270deg 315deg, #FFD43B 315deg 360deg)',
+                }}
+              />
+              <span className="absolute left-1/2 top-0 -translate-x-1/2 text-xl" aria-hidden>▼</span>
+            </div>
+          </div>
+        ) : null}
+        {left !== null && left > 0 ? (
+          <p className={`text-center font-display text-6xl ${left <= 5 ? 'text-candy' : 'text-grape'}`} aria-live="assertive">
+            {left}
+          </p>
+        ) : null}
         <div className="[perspective:900px]">
           <motion.div
             key={card?.id ?? 'missing'}

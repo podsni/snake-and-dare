@@ -2,6 +2,8 @@ import { BookOpen, Play, Settings, Volume2, VolumeX } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import logo from '../assets/logo.svg'
+import { useState } from 'react'
+import { seenTutorial, Tutorial } from '../components/Tutorial.tsx'
 import { useGame } from '../store/gameStore.ts'
 import { t } from '../utils/i18n.ts'
 import { Button } from '../components/Button.tsx'
@@ -25,6 +27,7 @@ export function MainMenu() {
   const openModal = useGame((state) => state.openModal)
   const goSetup = useGame((state) => state.goSetup)
   const continueGame = useGame((state) => state.continueGame)
+  const [showTutorial, setShowTutorial] = useState(() => !seenTutorial())
 
   return (
     <div className="relative mx-auto flex min-h-dvh w-full max-w-3xl flex-col overflow-x-hidden px-4 py-5">
@@ -94,6 +97,7 @@ export function MainMenu() {
         </Button>
         <p className="mt-auto pb-2 text-center text-sm font-bold text-ink/50">{t(language, 'playersLocal')}</p>
       </div>
+      {showTutorial ? <Tutorial onDone={() => setShowTutorial(false)} /> : null}
     </div>
   )
 }

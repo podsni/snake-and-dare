@@ -1,6 +1,6 @@
 import type { Settings } from '../game/types.ts'
 
-export type SfxName = 'dice' | 'step' | 'ladder' | 'snake' | 'card' | 'reward' | 'win' | 'click' | 'bounce'
+export type SfxName = 'dice' | 'step' | 'ladder' | 'snake' | 'card' | 'reward' | 'win' | 'click' | 'bounce' | 'tick'
 
 class AudioBus {
   private ctx: AudioContext | null = null
@@ -101,6 +101,8 @@ class AudioBus {
         tone(784, 0.16, 'triangle', 0.1, 0.08)
       } else if (name === 'win') {
         ;[523, 659, 784, 1046].forEach((freq, index) => tone(freq, 0.2, 'triangle', 0.12, index * 0.12))
+      } else if (name === 'tick') {
+        tone(880, 0.06, 'square', 0.05)
       } else {
         tone(740, 0.05, 'sine', 0.06)
       }
@@ -111,10 +113,15 @@ class AudioBus {
 
   private startMusic(): void {
     if (this.musicTimer || !this.ctx || !this.musicGain) return
-    const notes = [262, 330, 392, 330, 294, 392, 440, 349]
+    const loops = [
+      [262, 330, 392, 330, 294, 392, 440, 349],
+      [349, 392, 440, 392, 330, 294, 330, 262],
+      [392, 494, 440, 392, 330, 392, 349, 330],
+    ]
     this.musicTimer = setInterval(() => {
       if (!this.music || !this.unlocked || !this.ctx || !this.musicGain) return
       try {
+        const notes = loops[Math.floor(this.note / 16) % loops.length] ?? loops[0]
         const ctx = this.ctx
         const osc = ctx.createOscillator()
         const amp = ctx.createGain()

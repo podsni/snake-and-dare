@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { buildBoard, tileAt, tileCoord } from '../game/board.ts'
 import type { BoardSize } from '../game/types.ts'
 import type { Emote } from '../store/gameStore.ts'
@@ -39,6 +40,10 @@ export function GameBoard({
   const height = board.rows * 100
 
   const shown = (id: string, fallback: number) => (visual && id in visual ? visual[id] ?? fallback : fallback)
+  useEffect(() => {
+    if (!activeId || window.innerWidth >= 768) return
+    document.querySelector(`[data-token="${activeId}"]`)?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
+  }, [activeId, visual])
   const groups = new Map<number, string[]>()
   for (const player of players) {
     const position = shown(player.id, player.position)
@@ -95,6 +100,7 @@ export function GameBoard({
           return (
             <div
               key={player.id}
+              data-token={player.id}
               className={`absolute z-[3] transition-[left,top] ease-out ${
                 emotes[player.id] === 'sad' || emotes[player.id] === 'happy' ? 'duration-700' : 'duration-300'
               }`}

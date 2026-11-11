@@ -17,7 +17,14 @@ export function PlayerToken({
   active: boolean
   compact?: boolean
 }) {
+  const bubble = emote === 'sad' ? '😵' : emote === 'happy' ? '😄' : emote === 'win' ? '🎉' : emote === 'hop' ? '✨' : ''
   return (
+    <div className="relative">
+      {bubble && !compact ? (
+        <span className="speech-pop absolute -top-5 left-1/2 -translate-x-1/2 text-base" aria-hidden>
+          {bubble}
+        </span>
+      ) : null}
     <div
       className={cn(
         'rounded-full border-[3px] bg-white shadow-md',
@@ -33,6 +40,7 @@ export function PlayerToken({
       <div className="h-full w-full overflow-hidden rounded-full bg-white">
         <Avatar id={avatar} label={name} />
       </div>
+    </div>
     </div>
   )
 }

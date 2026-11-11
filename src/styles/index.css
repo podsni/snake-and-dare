@@ -155,6 +155,53 @@ summary {
   animation: toast-in 0.28s ease-out;
 }
 
+.dice-scene {
+  width: 4.5rem;
+  height: 4.5rem;
+  perspective: 420px;
+}
+
+.dice-cube {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dice-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  border-radius: 0.7rem;
+  border: 3px solid #2b2144;
+  background: white;
+  backface-visibility: hidden;
+}
+
+.dice-face span {
+  width: 0.55rem;
+  height: 0.55rem;
+  margin: auto;
+  border-radius: 999px;
+  background: #2b2144;
+}
+
+@keyframes tumble {
+  0% { transform: rotateX(0deg) rotateY(0deg); }
+  100% { transform: rotateX(720deg) rotateY(900deg); }
+}
+
+.dice-tumble {
+  animation: tumble 0.7s linear infinite;
+}
+
+.speech-pop {
+  animation: toast-in 0.2s ease-out;
+}
+
 .animate-drift {
   animation: drift 7s ease-in-out infinite;
 }

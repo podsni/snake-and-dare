@@ -1,4 +1,5 @@
 import { Shield } from 'lucide-react'
+import { canUndo } from '../game/juice.ts'
 import { canRoll } from '../game/logic.ts'
 import type { GameState } from '../game/types.ts'
 import { useGame } from '../store/gameStore.ts'
@@ -16,6 +17,10 @@ export function GameHUD({ game, showRoll }: { game: GameState; showRoll: boolean
   const diceRolling = useGame((state) => state.diceRolling)
   const bonusRoll = useGame((state) => state.bonusRoll)
   const log = useGame((state) => state.log)
+  const streak = useGame((state) => state.streak)
+  const history = useGame((state) => state.history)
+  const undo = useGame((state) => state.undo)
+  const setMini = useGame((state) => state.setMini)
   const player = game.players[game.current]
   const locked = animating || !canRoll(game)
   if (!player) return null
@@ -41,17 +46,26 @@ export function GameHUD({ game, showRoll }: { game: GameState; showRoll: boolean
                 {t(language, 'shieldReady')}
               </p>
             ) : null}
+            {streak >= 2 ? <p className="mt-1 text-sm font-extrabold text-candy">{t(language, 'streak', { n: streak })}</p> : null}
           </div>
         </div>
         {showRoll ? (
           <div className="mt-4 flex items-center gap-3">
-            <Dice value={diceValue} rolling={diceRolling} label={`${rollLabel} ${diceRolling ? '' : diceValue}`} />
+            <Dice value={diceValue} rolling={diceRolling} label={`${rollLabel} ${diceRolling ? '' : diceValue}`} onRoll={roll} disabled={locked} />
             <Button data-testid="roll-button" className="h-16 flex-1 text-lg" onClick={roll} disabled={locked}>
               {rollLabel}
             </Button>
           </div>
         ) : null}
-        <p className="mt-3 text-xs font-bold text-ink/60">{t(language, 'exactHint')}</p>
+        <p className="mt-3 text-xs font-bold text-ink/60">{t(language, 'tapDice')}</p>
+        <div className="mt-2 flex gap-2">
+          <Button variant="ghost" className="min-h-10 flex-1 px-2 py-2 text-sm" onClick={undo} disabled={!canUndo(history, game) || animating}>
+            {t(language, 'undo')}
+          </Button>
+          <Button variant="ghost" data-testid="mini-open" className="min-h-10 flex-1 px-2 py-2 text-sm" onClick={() => setMini(true)} disabled={animating || !canRoll(game)}>
+            {t(language, 'miniTitle')}
+          </Button>
+        </div>
         <div className="mt-3">
           <EventToast />
         </div>
@@ -107,6 +121,7 @@ export function RollBar() {
   const diceValue = useGame((state) => state.diceValue)
   const diceRolling = useGame((state) => state.diceRolling)
   const bonusRoll = useGame((state) => state.bonusRoll)
+  const setMini = useGame((state) => state.setMini)
   if (!game) return null
   const locked = animating || !canRoll(game)
   const rollLabel = animating ? (diceRolling ? t(language, 'rolling') : t(language, 'moving')) : bonusRoll ? t(language, 'rollAgain') : t(language, 'roll')
@@ -116,10 +131,15 @@ export function RollBar() {
         <EventToast />
       </div>
       <div className="mx-auto flex max-w-3xl items-center gap-3">
-        <Dice value={diceValue} rolling={diceRolling} label={rollLabel} />
-        <Button data-testid="roll-button-mobile" className="h-[4.5rem] flex-1 text-xl" onClick={roll} disabled={locked}>
-          {rollLabel}
-        </Button>
+        <Dice value={diceValue} rolling={diceRolling} label={rollLabel} onRoll={roll} disabled={locked} />
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <Button data-testid="roll-button-mobile" className="h-14 text-xl" onClick={roll} disabled={locked}>
+            {rollLabel}
+          </Button>
+          <Button variant="ghost" data-testid="mini-open-mobile" className="min-h-10 py-2 text-sm" onClick={() => setMini(true)} disabled={locked}>
+            {t(language, 'miniTitle')}
+          </Button>
+        </div>
       </div>
     </div>
   )

@@ -1,12 +1,15 @@
 import { CircleHelp, Dices, Flame, Home, MessageCircleQuestion, Minus, Plus, Settings, Shield, Sparkles, Star, Volume2, VolumeX } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useRollHotkey } from '../hooks/useHotkeys.ts'
 import { useGame } from '../store/gameStore.ts'
+import { enableShake } from '../utils/feel.ts'
 import { t } from '../utils/i18n.ts'
 import type { CopyKey } from '../utils/i18n.ts'
+import { Button } from '../components/Button.tsx'
 import { GameBoard } from '../components/GameBoard.tsx'
 import { GameHUD, LogList, RollBar } from '../components/GameHUD.tsx'
 import { Leaderboard } from '../components/Leaderboard.tsx'
+import { MiniGame } from '../components/MiniGame.tsx'
 import { PlayerToken } from '../components/PlayerToken.tsx'
 
 const LEGEND: Array<{ key: CopyKey; icon: typeof Star; color: string }> = [
@@ -30,9 +33,30 @@ export function PlayScreen() {
   const openModal = useGame((state) => state.openModal)
   const toggleSfx = useGame((state) => state.toggleSfx)
   const requestLeave = useGame((state) => state.requestLeave)
+  const vote = useGame((state) => state.vote)
+  const voteFor = useGame((state) => state.voteFor)
+  const closeVote = useGame((state) => state.closeVote)
+  const mini = useGame((state) => state.mini)
   const [zoom, setZoom] = useState(1)
+  const [shakeOn, setShakeOn] = useState(false)
 
-  useRollHotkey(!!game && game.phase === 'roll' && !animating && modal === null, roll)
+  useRollHotkey(!!game && game.phase === 'roll' && !animating && modal === null && !mini, roll)
+
+  useEffect(() => {
+    if (!shakeOn || !game || game.phase !== 'roll' || animating || modal || mini) return
+    let last = 0
+    const onMotion = (event: DeviceMotionEvent) => {
+      const acc = event.accelerationIncludingGravity
+      if (!acc) return
+      const force = Math.abs(acc.x ?? 0) + Math.abs(acc.y ?? 0) + Math.abs(acc.z ?? 0)
+      if (force > 32 && Date.now() - last > 1200) {
+        last = Date.now()
+        roll()
+      }
+    }
+    window.addEventListener('devicemotion', onMotion)
+    return () => window.removeEventListener('devicemotion', onMotion)
+  }, [shakeOn, game, animating, modal, mini, roll])
 
   if (!game) return null
   const active = game.players[game.current]
@@ -42,7 +66,7 @@ export function PlayScreen() {
   })
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-6xl px-3 py-3 pb-28 md:pb-6">
+    <div className="mx-auto min-h-dvh w-full max-w-6xl px-3 py-3 pb-44 md:pb-6">
       <header className="mb-3 flex items-center gap-2">
         <button type="button" className="inline-flex h-11 items-center gap-1 rounded-2xl bg-white px-3 font-extrabold shadow-sm" onClick={requestLeave}>
           <Home className="h-4 w-4" aria-hidden />
@@ -61,6 +85,15 @@ export function PlayScreen() {
         <IconButton label={t(language, 'settings')} onClick={() => openModal('settings')}>
           <Settings className="h-5 w-5" />
         </IconButton>
+        <button
+          type="button"
+          className={`hidden h-11 rounded-2xl px-3 text-sm font-extrabold sm:inline-flex ${shakeOn ? 'bg-grape text-white' : 'bg-white'}`}
+          onClick={() => {
+            void enableShake().then((ok) => setShakeOn(ok))
+          }}
+        >
+          {shakeOn ? t(language, 'shakeOn') : t(language, 'shakeRoll')}
+        </button>
       </header>
 
       <div className="grid items-start gap-3 md:grid-cols-[minmax(0,1fr)_320px]">
@@ -73,6 +106,15 @@ export function PlayScreen() {
               {t(language, 'turnOf', { name: active.name })}
             </p>
           ) : null}
+          <button
+            type="button"
+            className={`mb-2 min-h-11 rounded-2xl px-3 text-sm font-extrabold md:hidden ${shakeOn ? 'bg-grape text-white' : 'bg-white'}`}
+            onClick={() => {
+              void enableShake().then((ok) => setShakeOn(ok))
+            }}
+          >
+            {shakeOn ? t(language, 'shakeOn') : t(language, 'shakeRoll')}
+          </button>
           {active ? (
             <div className="mb-3 flex items-center gap-2 overflow-x-auto rounded-3xl bg-white p-2 shadow-card md:hidden">
               {game.players.map((player) => (
@@ -138,6 +180,22 @@ export function PlayScreen() {
           <GameHUD game={game} showRoll />
         </aside>
       </div>
+      {vote ? (
+        <div className="fixed inset-x-3 bottom-36 z-40 rounded-3xl bg-white p-3 shadow-card md:bottom-6 md:left-auto md:right-6 md:w-80" data-testid="vote-bar">
+          <p className="font-extrabold">{t(language, 'voteTitle', { name: vote.targetName })}</p>
+          <div className="mt-2 space-y-2">
+            {game.players.filter((player) => player.id !== vote.targetId).map((player) => (
+              <div key={player.id} className="flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate font-extrabold">{player.name}</span>
+                <Button variant="secondary" className="min-h-10 px-3 py-2 text-sm" onClick={() => voteFor(player.id, 'up')}>{t(language, 'voteUp')}</Button>
+                <Button variant="ghost" className="min-h-10 px-3 py-2 text-sm" onClick={() => voteFor(player.id, 'down')}>{t(language, 'voteDown')}</Button>
+              </div>
+            ))}
+          </div>
+          <Button className="mt-2 w-full" onClick={closeVote}>{t(language, 'voteDone')}</Button>
+        </div>
+      ) : null}
+      {mini ? <MiniGame game={game} /> : null}
       <RollBar />
     </div>
   )

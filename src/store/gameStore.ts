@@ -1,7 +1,10 @@
 import { create } from 'zustand'
+import { canUndo, castVote, nextStreak } from '../game/juice.ts'
 import { applyDice, canRoll, completeChallenge, createGame, defaultDraft, redrawChallenge, rollD6 } from '../game/logic.ts'
+import { cardById } from '../game/deck.ts'
 import type { BoardSize, Category, Effect, GameState, Lang, PlayerDraft, Settings } from '../game/types.ts'
 import { audio } from '../utils/audio.ts'
+import { buzz } from '../utils/feel.ts'
 import type { CopyKey } from '../utils/i18n.ts'
 import { discardGame, loadGame, loadSettings, saveGame, saveSettings } from '../utils/storage.ts'
 
@@ -38,6 +41,11 @@ interface GameStore {
   visual: Record<string, number> | null
   emotes: Record<string, Emote>
   log: LogEntry[]
+  history: GameState | null
+  streak: number
+  cheers: Record<string, number>
+  vote: { targetId: string; targetName: string; ups: string[]; downs: string[] } | null
+  mini: boolean
   setLanguage: (language: Lang) => void
   patchSettings: (patch: Partial<Settings>) => void
   toggleSfx: () => void
@@ -58,6 +66,11 @@ interface GameStore {
   playAgain: () => void
   requestLeave: () => void
   confirmLeave: () => void
+  undo: () => void
+  voteFor: (voterId: string, choice: 'up' | 'down') => void
+  closeVote: () => void
+  setMini: (open: boolean) => void
+  cheer: (playerId: string) => void
 }
 
 const bootSave = loadGame()
@@ -155,6 +168,11 @@ export const useGame = create<GameStore>((set, get) => ({
   visual: null,
   emotes: {},
   log: [],
+  history: null,
+  streak: 0,
+  cheers: {},
+  vote: null,
+  mini: false,
 
   setLanguage: (language) => {
     const settings = { ...get().settings, language }
@@ -283,6 +301,11 @@ export const useGame = create<GameStore>((set, get) => ({
       visual: null,
       emotes: {},
       log: [],
+      history: null,
+      streak: 0,
+      cheers: {},
+      vote: null,
+      mini: false,
       setupError: null,
     })
   },
@@ -306,6 +329,9 @@ export const useGame = create<GameStore>((set, get) => ({
       diceRolling: false,
       visual: null,
       log: [],
+      history: null,
+      vote: null,
+      mini: false,
       bonusRoll: false,
     })
   },
@@ -315,11 +341,12 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!snap.game || snap.animating || !canRoll(snap.game)) return
     audio.unlock()
     audio.play('dice')
+    buzz(18)
     const token = ++rollToken
     const value = rollD6(Math.random)
     const { state: next, effects } = applyDice(snap.game, value, Math.random)
     inflight = next
-    set({ animating: true, diceRolling: true, diceValue: value, bonusRoll: false })
+    set({ animating: true, diceRolling: true, diceValue: value, bonusRoll: false, history: snap.game, vote: null, mini: false })
     const reduce = snap.settings.reduceMotion
     const activeGame = snap.game
     const playerId = activeGame.players[activeGame.current]?.id
@@ -346,10 +373,12 @@ export const useGame = create<GameStore>((set, get) => ({
           } else if (effect.type === 'snake') {
             set({ visual: { [playerId]: effect.to }, emotes: { ...get().emotes, [playerId]: 'sad' } })
             audio.play('snake')
+            buzz([40, 30, 40])
             await wait(reduce ? 0 : 700)
           } else if (effect.type === 'ladder') {
             set({ visual: { [playerId]: effect.to }, emotes: { ...get().emotes, [playerId]: 'happy' } })
             audio.play('ladder')
+            buzz([12, 24, 12, 24])
             await wait(reduce ? 0 : 700)
           } else if (effect.type === 'bounce') {
             set({ emotes: { ...get().emotes, [playerId]: 'sad' } })
@@ -390,13 +419,21 @@ export const useGame = create<GameStore>((set, get) => ({
     const { game, animating, settings } = get()
     if (!game || animating || game.phase !== 'challenge') return
     audio.unlock()
+    const card = game.pendingCardId ? cardById(game.pendingCardId) : undefined
+    const actor = game.players[game.current]
     const { state, effects } = completeChallenge(game, action)
     audio.play(action === 'done' ? 'reward' : 'click')
+    if (action === 'done') buzz(12)
     const bonus = effects.some((effect) => effect.type === 'extra_roll')
     set({
       game: state,
       bonusRoll: bonus,
       savedWon: state.phase === 'won',
+      streak: nextStreak(get().streak, action === 'done'),
+      vote:
+        action === 'done' && card?.type === 'dare' && actor
+          ? { targetId: actor.id, targetName: actor.name, ups: [], downs: [] }
+          : null,
       log: [...get().log, ...logsFrom(effects, game)].slice(-8),
     })
     persist(state, settings)
@@ -438,10 +475,54 @@ export const useGame = create<GameStore>((set, get) => ({
       visual: null,
       emotes: {},
       log: [],
+      history: null,
+      streak: 0,
+      cheers: {},
+      vote: null,
+      mini: false,
       hasSave: true,
       savedWon: false,
     })
     persist(next, settings)
+  },
+
+  undo: () => {
+    const { history, game, animating, settings } = get()
+    if (animating || !canUndo(history, game) || !history) return
+    rollToken += 1
+    inflight = null
+    set({
+      game: history,
+      history: null,
+      animating: false,
+      diceRolling: false,
+      vote: null,
+      mini: false,
+      bonusRoll: false,
+      visual: null,
+    })
+    persist(history, settings)
+  },
+
+  voteFor: (voterId, choice) => {
+    const vote = get().vote
+    if (!vote) return
+    const next = castVote({ ups: vote.ups, downs: vote.downs, voterId, targetId: vote.targetId, choice })
+    if (next === vote || (next.ups === vote.ups && next.downs === vote.downs)) return
+    const cheers = { ...get().cheers }
+    if (choice === 'up' && next.ups.includes(voterId) && !vote.ups.includes(voterId)) {
+      cheers[vote.targetId] = (cheers[vote.targetId] ?? 0) + 1
+      buzz(10)
+    }
+    set({ vote: { ...vote, ups: next.ups, downs: next.downs }, cheers })
+  },
+
+  closeVote: () => set({ vote: null }),
+  setMini: (open) => set({ mini: open }),
+  cheer: (playerId) => {
+    const cheers = { ...get().cheers, [playerId]: (get().cheers[playerId] ?? 0) + 1 }
+    set({ cheers })
+    buzz(10)
   },
 
   requestLeave: () => set({ modal: 'confirm-leave' }),

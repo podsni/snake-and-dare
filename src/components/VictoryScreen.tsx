@@ -1,6 +1,8 @@
 import { Home, RotateCcw } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect, useRef } from 'react'
+import { endAwards } from '../game/juice.ts'
+import type { AwardId } from '../game/juice.ts'
 import type { GameState } from '../game/types.ts'
 import { useGame } from '../store/gameStore.ts'
 import { t } from '../utils/i18n.ts'
@@ -12,8 +14,18 @@ export function VictoryScreen({ game }: { game: GameState }) {
   const settings = useGame((state) => state.settings)
   const playAgain = useGame((state) => state.playAgain)
   const backToMenu = useGame((state) => state.backToMenu)
+  const cheers = useGame((state) => state.cheers)
   const language = settings.language
   const winner = game.players.find((player) => player.id === game.winnerId) ?? game.players[0]
+  const awards = endAwards(game.players, cheers)
+  const awardKey: Record<AwardId, 'awardBrave' | 'awardHonest' | 'awardLucky' | 'awardSnake' | 'awardLadder' | 'awardCheer'> = {
+    brave: 'awardBrave',
+    honest: 'awardHonest',
+    lucky: 'awardLucky',
+    snake: 'awardSnake',
+    ladder: 'awardLadder',
+    cheer: 'awardCheer',
+  }
 
   useEffect(() => {
     const previous = document.body.style.overflow
@@ -48,6 +60,18 @@ export function VictoryScreen({ game }: { game: GameState }) {
         <p className="mt-2 text-center text-sm font-bold text-ink/60">
           {t(language, 'turns')}: {game.turns}
         </p>
+        {awards.length > 0 ? (
+          <div className="mt-4">
+            <h3 className="font-display text-xl">{t(language, 'awards')}</h3>
+            <ul className="mt-2 space-y-1">
+              {awards.map((award) => (
+                <li key={award.id} className="rounded-2xl bg-white px-3 py-2 text-sm font-extrabold">
+                  {t(language, awardKey[award.id])}: {award.playerIds.map((id) => game.players.find((player) => player.id === id)?.name).filter(Boolean).join(', ')}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <h3 className="mt-4 font-display text-xl">{t(language, 'standings')}</h3>
         <div className="mt-2">
           <Leaderboard players={game.players} language={language} activeId={winner.id} />
@@ -92,7 +116,7 @@ function Confetti({ enabled }: { enabled: boolean }) {
     resize()
     window.addEventListener('resize', resize)
     const colors = ['#7950F2', '#FF5C9D', '#4DABF7', '#51CF66', '#FFD43B', '#FF922B']
-    const bits = Array.from({ length: 110 }, () => ({
+    const bits = Array.from({ length: window.innerWidth < 700 ? 50 : 110 }, () => ({
       x: Math.random() * window.innerWidth,
       y: Math.random() * -window.innerHeight,
       r: 4 + Math.random() * 5,
