@@ -6,6 +6,7 @@ import { enableShake } from '../utils/feel.ts'
 import { t } from '../utils/i18n.ts'
 import type { CopyKey } from '../utils/i18n.ts'
 import { Button } from '../components/Button.tsx'
+import { DiceTray } from '../components/DiceTray.tsx'
 import { GameBoard } from '../components/GameBoard.tsx'
 import { GameHUD, LogList, RollBar } from '../components/GameHUD.tsx'
 import { Leaderboard } from '../components/Leaderboard.tsx'
@@ -40,7 +41,7 @@ export function PlayScreen() {
   const [zoom, setZoom] = useState(1)
   const [shakeOn, setShakeOn] = useState(false)
 
-  useRollHotkey(!!game && game.phase === 'roll' && !animating && modal === null && !mini, roll)
+  useRollHotkey(!!game && game.phase === 'roll' && !animating && modal === null && !mini, () => roll(0.55))
 
   useEffect(() => {
     if (!shakeOn || !game || game.phase !== 'roll' || animating || modal || mini) return
@@ -51,7 +52,7 @@ export function PlayScreen() {
       const force = Math.abs(acc.x ?? 0) + Math.abs(acc.y ?? 0) + Math.abs(acc.z ?? 0)
       if (force > 32 && Date.now() - last > 1200) {
         last = Date.now()
-        roll()
+        roll(0.92)
       }
     }
     window.addEventListener('devicemotion', onMotion)
@@ -196,6 +197,7 @@ export function PlayScreen() {
         </div>
       ) : null}
       {mini ? <MiniGame game={game} /> : null}
+      <DiceTray />
       <RollBar />
     </div>
   )

@@ -37,6 +37,9 @@ interface GameStore {
   animating: boolean
   diceValue: number
   diceRolling: boolean
+  physicsOn: boolean
+  throwRequest: { id: number; charge: number } | null
+  landFlash: boolean
   bonusRoll: boolean
   visual: Record<string, number> | null
   emotes: Record<string, Emote>
@@ -60,7 +63,9 @@ interface GameStore {
   requestStart: () => void
   confirmNewGame: () => void
   continueGame: () => void
-  roll: () => void
+  roll: (charge?: number) => void
+  commitRoll: (value: number) => void
+  setPhysics: (on: boolean) => void
   finishChallenge: (action: 'done' | 'skip') => void
   newCard: () => void
   playAgain: () => void
@@ -164,6 +169,9 @@ export const useGame = create<GameStore>((set, get) => ({
   animating: false,
   diceValue: 1,
   diceRolling: false,
+  physicsOn: false,
+  throwRequest: null,
+  landFlash: false,
   bonusRoll: false,
   visual: null,
   emotes: {},
@@ -336,24 +344,66 @@ export const useGame = create<GameStore>((set, get) => ({
     })
   },
 
-  roll: () => {
+  roll: (charge = 0.45) => {
     const snap = get()
     if (!snap.game || snap.animating || !canRoll(snap.game)) return
     audio.unlock()
     audio.play('dice')
-    buzz(18)
+    buzz(12)
     const token = ++rollToken
+    const base = snap.game
+    if (snap.physicsOn && !snap.settings.reduceMotion) {
+      set({
+        animating: true,
+        diceRolling: true,
+        landFlash: false,
+        throwRequest: { id: token, charge },
+        history: base,
+        vote: null,
+        mini: false,
+        bonusRoll: false,
+      })
+      window.setTimeout(() => {
+        if (token !== rollToken || !get().diceRolling) return
+        get().commitRoll(rollD6(Math.random))
+      }, 6500)
+      return
+    }
     const value = rollD6(Math.random)
-    const { state: next, effects } = applyDice(snap.game, value, Math.random)
-    inflight = next
-    set({ animating: true, diceRolling: true, diceValue: value, bonusRoll: false, history: snap.game, vote: null, mini: false })
-    const reduce = snap.settings.reduceMotion
+    set({
+      animating: true,
+      diceRolling: true,
+      diceValue: value,
+      bonusRoll: false,
+      history: base,
+      vote: null,
+      mini: false,
+      landFlash: false,
+      throwRequest: null,
+    })
+    window.setTimeout(() => {
+      if (token !== rollToken) return
+      get().commitRoll(value)
+    }, snap.settings.reduceMotion ? 40 : 680)
+  },
+
+  commitRoll: (value) => {
+    const snap = get()
+    if (!snap.game || !snap.diceRolling) return
+    const token = rollToken
     const activeGame = snap.game
     const playerId = activeGame.players[activeGame.current]?.id
     const actor = activeGame.players[activeGame.current]?.name ?? ''
+    if (!playerId) return
+    const reduce = snap.settings.reduceMotion
+    const { state: next, effects } = applyDice(activeGame, value, Math.random)
+    inflight = next
+    set({ diceValue: value, diceRolling: false, landFlash: !reduce })
+    audio.play('reward')
+    buzz([14, 30, 18])
     window.setTimeout(() => {
       if (token !== rollToken || !playerId) return
-      set({ diceRolling: false })
+      set({ landFlash: false })
       void (async () => {
         const step = reduce ? 0 : 300
         const note = (effect: Effect) => {
@@ -412,8 +462,10 @@ export const useGame = create<GameStore>((set, get) => ({
         })
         persist(next, get().settings)
       })()
-    }, reduce ? 40 : 680)
+    }, reduce ? 0 : 1500)
   },
+
+  setPhysics: (on) => set({ physicsOn: on }),
 
   finishChallenge: (action) => {
     const { game, animating, settings } = get()

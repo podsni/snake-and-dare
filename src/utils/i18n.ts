@@ -240,7 +240,8 @@ const M = {
   tutorialNext: { en: 'Next', id: 'Lanjut' },
   tutorialDone: { en: 'Let’s play', id: 'Ayo main' },
   tutorialSkip: { en: 'Skip intro', id: 'Lewati pengantar' },
-  tapDice: { en: 'Tap the die to roll', id: 'Ketuk dadu untuk melempar' },
+  tapDice: { en: 'Hold to shake, release to throw', id: 'Tahan untuk mengocok, lepas untuk melempar' },
+  landedOn: { en: 'You rolled {n}', id: 'Kamu dapat {n}' },
 } as const
 
 export type CopyKey = keyof typeof M

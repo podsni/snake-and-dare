@@ -1,4 +1,6 @@
 import { Shield } from 'lucide-react'
+import { useRef, type ReactNode } from 'react'
+import { throwForce } from '../game/diceThrow.ts'
 import { canUndo } from '../game/juice.ts'
 import { canRoll } from '../game/logic.ts'
 import type { GameState } from '../game/types.ts'
@@ -15,6 +17,8 @@ export function GameHUD({ game, showRoll }: { game: GameState; showRoll: boolean
   const animating = useGame((state) => state.animating)
   const diceValue = useGame((state) => state.diceValue)
   const diceRolling = useGame((state) => state.diceRolling)
+  const physicsOn = useGame((state) => state.physicsOn)
+  const landFlash = useGame((state) => state.landFlash)
   const bonusRoll = useGame((state) => state.bonusRoll)
   const log = useGame((state) => state.log)
   const streak = useGame((state) => state.streak)
@@ -51,10 +55,14 @@ export function GameHUD({ game, showRoll }: { game: GameState; showRoll: boolean
         </div>
         {showRoll ? (
           <div className="mt-4 flex items-center gap-3">
-            <Dice value={diceValue} rolling={diceRolling} label={`${rollLabel} ${diceRolling ? '' : diceValue}`} onRoll={roll} disabled={locked} />
-            <Button data-testid="roll-button" className="h-16 flex-1 text-lg" onClick={roll} disabled={locked}>
+            {physicsOn && (diceRolling || landFlash) ? (
+              <div className="h-[4.5rem] w-[4.5rem]" />
+            ) : (
+              <Dice value={diceValue} rolling={diceRolling && !physicsOn} label={`${rollLabel} ${diceRolling ? '' : diceValue}`} onRoll={() => roll(0.45)} disabled={locked} />
+            )}
+            <HoldRoll testId="roll-button" className="h-16 flex-1 text-lg" disabled={locked}>
               {rollLabel}
-            </Button>
+            </HoldRoll>
           </div>
         ) : null}
         <p className="mt-3 text-xs font-bold text-ink/60">{t(language, 'tapDice')}</p>
@@ -85,6 +93,46 @@ export function GameHUD({ game, showRoll }: { game: GameState; showRoll: boolean
         </p>
       )}
     </div>
+  )
+}
+
+function HoldRoll({
+  testId,
+  className,
+  disabled,
+  children,
+}: {
+  testId: string
+  className?: string
+  disabled?: boolean
+  children: ReactNode
+}) {
+  const roll = useGame((state) => state.roll)
+  const down = useRef(0)
+  const fromPointer = useRef(false)
+  return (
+    <Button
+      data-testid={testId}
+      className={className}
+      disabled={disabled}
+      onPointerDown={() => {
+        down.current = performance.now()
+      }}
+      onPointerUp={() => {
+        if (disabled) return
+        fromPointer.current = true
+        roll(throwForce(performance.now() - down.current))
+      }}
+      onClick={() => {
+        if (fromPointer.current) {
+          fromPointer.current = false
+          return
+        }
+        if (!disabled) roll(0.45)
+      }}
+    >
+      {children}
+    </Button>
   )
 }
 
@@ -120,6 +168,8 @@ export function RollBar() {
   const animating = useGame((state) => state.animating)
   const diceValue = useGame((state) => state.diceValue)
   const diceRolling = useGame((state) => state.diceRolling)
+  const physicsOn = useGame((state) => state.physicsOn)
+  const landFlash = useGame((state) => state.landFlash)
   const bonusRoll = useGame((state) => state.bonusRoll)
   const setMini = useGame((state) => state.setMini)
   if (!game) return null
@@ -131,11 +181,15 @@ export function RollBar() {
         <EventToast />
       </div>
       <div className="mx-auto flex max-w-3xl items-center gap-3">
-        <Dice value={diceValue} rolling={diceRolling} label={rollLabel} onRoll={roll} disabled={locked} />
+        {physicsOn && (diceRolling || landFlash) ? (
+          <div className="h-[4.5rem] w-[4.5rem] shrink-0" />
+        ) : (
+          <Dice value={diceValue} rolling={diceRolling && !physicsOn} label={rollLabel} onRoll={() => roll(0.45)} disabled={locked} />
+        )}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <Button data-testid="roll-button-mobile" className="h-14 text-xl" onClick={roll} disabled={locked}>
+          <HoldRoll testId="roll-button-mobile" className="h-14 text-xl" disabled={locked}>
             {rollLabel}
-          </Button>
+          </HoldRoll>
           <Button variant="ghost" data-testid="mini-open-mobile" className="min-h-10 py-2 text-sm" onClick={() => setMini(true)} disabled={locked}>
             {t(language, 'miniTitle')}
           </Button>
