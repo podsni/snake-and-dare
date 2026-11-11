@@ -1,54 +1,56 @@
 # Snake & Dare: Roll Your Fate
 
-A local multiplayer party game: classic snakes and ladders mixed with truth or dare. Two to six people play on one phone or computer. The interface opens in Indonesian; English is in the language control. There is no account and no server — the whole match stays in the browser.
+Ular tangga yang dicampur kartu jujur dan tantangan, buat dimainkan bareng di satu layar. Dua sampai enam orang, satu ponsel atau komputer. Tidak perlu akun dan tidak ada server: pertandingan tersimpan di peramban.
 
-## Play
+Bahasa yang muncul pertama kali adalah **Indonesia**. Inggris tetap ada di tombol bahasa.
+
+A local snakes-and-ladders party game with honesty and challenge cards. Two to six people share one device. The match never leaves the browser.
+
+## Cara menjalankan
+
+Butuh Node.js 22.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the URL Vite prints (the dev server in this project uses port **43123**).
+Buka alamat yang dicetak Vite. Server pengembangan di proyek ini memakai porta **43123**.
 
-Other commands:
+Perintah lain:
 
 ```bash
-npm test        # game-rule unit tests
-npm run build   # typecheck and production build
-npm run preview # serve the production build
+npm test          # uji aturan permainan
+npm run build     # periksa tipe, lalu bangun berkas statis
+npm run preview   # sajikan hasil build
 ```
 
-## How a match works
+## Cara main, singkat
 
-- Tile 1 is the bottom-left square. Numbers zigzag, so the finish sits at the end of the last row.
-- Roll one die on your turn. The button stays locked until the token finishes moving.
-- Ladders climb, snakes slide. A shield blocks one snake.
-- You win only by landing exactly on the last tile. A roll that would pass it is wasted.
-- Truth, Dare, Lucky, Mystery, Double Dice, and Shield tiles resolve once. Bonus steps do not chain into another event, so nothing loops.
-- Completing a Truth is +10, a Dare is +15, Lucky is +5, and the finish is +50. Skip is always free. Points do not decide the winner.
-- Cards are not repeated until that category’s deck is used up. There are at least 300 honesty cards and 300 challenges, with 60 or more in each set: Funny, Friendship, Couple, Family, and Mixed. Couple prompts stay sweet and optional.
-- Progress, settings, and language are saved in LocalStorage. Continue is on the main menu. Starting a new game asks before it erases the save.
-- Sound and music start only after you tap or click. Reduce motion shortens the dice and token animation.
+- Kotak 1 ada di kiri bawah. Nomor berjalan zig-zag sampai kotak terakhir.
+- Satu lemparan tiap giliran. Tombol terkunci sampai bidak selesai berjalan.
+- Tangga naik, ular turun. Perisai menahan satu ular.
+- Menang hanya kalau mendarat pas di kotak terakhir. Lemparan yang kelewat hangus.
+- Kartu tidak diulang sampai kelompoknya habis. Ada minimal 300 kartu jujur dan 300 tantangan, enam puluh atau lebih di tiap set: Lucu, Teman, Berdua, Keluarga, dan Campur.
+- Poin hanya bonus. Yang menang tetap yang sampai duluan.
+- Lewati kartu selalu boleh. Suara baru berbunyi setelah kamu mengetuk layar.
 
-### Boards
+### Papan
 
-100 tiles uses the classic links: ladders 3→22, 8→30, 20→41, 28→55, 44→63, 71→92 and snakes 27→5, 39→17, 58→34, 67→49, 83→61, 97→76.
+100 kotak memakai jalur klasik: tangga 3→22, 8→30, 20→41, 28→55, 44→63, 71→92 dan ular 27→5, 39→17, 58→34, 67→49, 83→61, 97→76.
 
-50 tiles is a shorter course: ladders 2→18, 8→26, 14→32, 21→39, 33→48 and snakes 16→4, 24→7, 36→19, 44→22, 47→29.
+50 kotak lebih singkat: tangga 2→18, 8→26, 14→32, 21→39, 33→48 dan ular 16→4, 24→7, 36→19, 44→22, 47→29.
 
-## Deploy
+## Deploy ke Vercel
 
-The app is a static Vite build. Output is the `dist` folder.
+Aplikasi ini build statis Vite. Hasilnya folder `dist`. Tidak ada variabel rahasia.
 
-### Vercel
-
-1. Import the repository at [vercel.com/new](https://vercel.com/new).
+1. Buka [vercel.com/new](https://vercel.com/new) dan impor repositori ini.
 2. Framework preset: **Vite**.
 3. Build command: `npm run build`. Output directory: `dist`.
-4. Deploy. `vercel.json` rewrites unknown paths to `index.html`.
+4. Deploy. `vercel.json` mengarahkan jalur yang tidak dikenal ke `index.html`, jadi penyegaran halaman tetap membuka permainan.
 
-Or from the CLI, after `npx vercel login`:
+Dari terminal, setelah `npx vercel login`:
 
 ```bash
 npx vercel
@@ -56,14 +58,12 @@ npx vercel
 
 ### Netlify
 
-1. New site from Git, or drag the `dist` folder onto Netlify Drop.
-2. Build command: `npm run build`. Publish directory: `dist`.
-3. `netlify.toml` already sets that, plus an SPA fallback.
+`netlify.toml` sudah mengatur build `npm run build`, folder terbit `dist`, dan fallback untuk aplikasi satu halaman.
 
-## Project map
+## Isi proyek
 
-`src/game` holds the rules (board, deck, turns) with no React. `src/components` and `src/pages` are the 2D interface. `src/store/gameStore.ts` saves the match and plays the animations. Tests live next to the rules in `src/game/logic.test.ts`.
+`src/game` memegang aturan (papan, kartu, giliran) tanpa React. `src/components` dan `src/pages` adalah tampilan 2D. `src/store/gameStore.ts` menyimpan pertandingan dan memainkan animasi. Uji ada di `src/game/logic.test.ts`.
 
-## Stack
+## Tumpukan
 
-React, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion, Lucide, Web Audio, LocalStorage. The board is HTML and SVG. There is no WebGL and no 3D.
+React, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion, Lucide, Web Audio, LocalStorage. Papan digambar dengan HTML dan SVG. Tidak ada WebGL dan tidak ada 3D.
