@@ -66,7 +66,12 @@ export function PlayScreen() {
       <div className="grid items-start gap-3 md:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           {active ? (
-            <p className="mb-2 font-display text-2xl leading-none md:hidden">{t(language, 'turnOf', { name: active.name })}</p>
+            <p
+              className="mb-2 rounded-2xl border-4 bg-white px-3 py-2 font-display text-2xl leading-none md:hidden"
+              style={{ borderColor: active.color }}
+            >
+              {t(language, 'turnOf', { name: active.name })}
+            </p>
           ) : null}
           {active ? (
             <div className="mb-3 flex items-center gap-2 overflow-x-auto rounded-3xl bg-white p-2 shadow-card md:hidden">

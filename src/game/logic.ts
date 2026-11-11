@@ -79,7 +79,7 @@ export function createGame(options: {
   }
 }
 
-export function defaultDraft(count: number, language: 'en' | 'id' = 'en'): PlayerDraft[] {
+export function defaultDraft(count: number, language: 'en' | 'id' = 'id'): PlayerDraft[] {
   const total = Math.min(6, Math.max(2, count))
   return Array.from({ length: total }, (_, index) => ({
     name: language === 'id' ? `Pemain ${index + 1}` : `Player ${index + 1}`,

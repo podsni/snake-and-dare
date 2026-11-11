@@ -37,11 +37,15 @@ const PIPS: Record<number, Array<[number, number]>> = {
 
 export function Dice({ value, rolling, label }: { value: number; rolling: boolean; label: string }) {
   const [face, setFace] = useState(value)
+  const [landed, setLanded] = useState(false)
   useEffect(() => {
     if (!rolling) {
       setFace(value)
-      return
+      setLanded(true)
+      const land = window.setTimeout(() => setLanded(false), 360)
+      return () => window.clearTimeout(land)
     }
+    setLanded(false)
     const id = window.setInterval(() => {
       setFace(1 + Math.floor(Math.random() * 6))
     }, 70)
@@ -54,6 +58,7 @@ export function Dice({ value, rolling, label }: { value: number; rolling: boolea
       className={cn(
         'grid h-[4.5rem] w-[4.5rem] shrink-0 grid-cols-3 grid-rows-3 rounded-2xl border-4 border-ink bg-white p-2 shadow-pop',
         rolling && 'animate-dice',
+        !rolling && landed && 'animate-dice-land',
       )}
       role="img"
       aria-label={label}

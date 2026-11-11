@@ -1,6 +1,6 @@
 # Snake & Dare: Roll Your Fate
 
-A local multiplayer party game: classic snakes and ladders mixed with Truth or Dare. Two to six people play on one phone or computer. There is no account and no server — the whole match stays in the browser.
+A local multiplayer party game: classic snakes and ladders mixed with truth or dare. Two to six people play on one phone or computer. The interface opens in Indonesian; English is in the language control. There is no account and no server — the whole match stays in the browser.
 
 ## Play
 
@@ -27,7 +27,7 @@ npm run preview # serve the production build
 - You win only by landing exactly on the last tile. A roll that would pass it is wasted.
 - Truth, Dare, Lucky, Mystery, Double Dice, and Shield tiles resolve once. Bonus steps do not chain into another event, so nothing loops.
 - Completing a Truth is +10, a Dare is +15, Lucky is +5, and the finish is +50. Skip is always free. Points do not decide the winner.
-- Cards are not repeated until that category’s deck is used up. Funny, Friendship, Couple, Family, and Mixed each have their own pool. Couple prompts stay sweet and optional.
+- Cards are not repeated until that category’s deck is used up. There are at least 300 honesty cards and 300 challenges, with 60 or more in each set: Funny, Friendship, Couple, Family, and Mixed. Couple prompts stay sweet and optional.
 - Progress, settings, and language are saved in LocalStorage. Continue is on the main menu. Starting a new game asks before it erases the save.
 - Sound and music start only after you tap or click. Reduce motion shortens the dice and token animation.
 

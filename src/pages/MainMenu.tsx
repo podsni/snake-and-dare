@@ -62,7 +62,7 @@ export function MainMenu() {
         className="relative mt-6 text-center"
       >
         <img src={logo} alt="" className="mx-auto h-16 w-16" />
-        <p className="mt-2 font-display text-sm font-semibold uppercase tracking-[0.2em] text-candy">Roll your fate</p>
+        <p className="mt-2 font-display text-sm font-semibold uppercase tracking-[0.2em] text-candy">{t(language, 'eyebrow')}</p>
         <h1 className="mt-1 font-display text-[2.1rem] leading-none text-grape min-[380px]:text-5xl sm:text-7xl">
           SNAKE & DARE
         </h1>

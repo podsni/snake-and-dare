@@ -17,7 +17,7 @@ export function defaultSettings(): Settings {
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   return {
-    language: 'en',
+    language: 'id',
     sfx: true,
     music: false,
     volume: 0.7,

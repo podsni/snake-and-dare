@@ -45,6 +45,7 @@ export function SettingsModal() {
             on={settings.reduceMotion}
             onClick={() => patch({ reduceMotion: !settings.reduceMotion })}
             language={language}
+            testId="reduce-motion"
           />
           <div>
             <p className="font-extrabold">{t(language, 'language')}</p>
@@ -58,7 +59,7 @@ export function SettingsModal() {
             </div>
           </div>
         </div>
-        <Button className="mt-5 w-full" variant="secondary" onClick={close}>
+        <Button data-testid="settings-close" className="mt-5 w-full" variant="secondary" onClick={close}>
           {t(language, 'close')}
         </Button>
       </div>
@@ -66,13 +67,26 @@ export function SettingsModal() {
   )
 }
 
-function Toggle({ label, on, onClick, language }: { label: string; on: boolean; onClick: () => void; language: Lang }) {
+function Toggle({
+  label,
+  on,
+  onClick,
+  language,
+  testId,
+}: {
+  label: string
+  on: boolean
+  onClick: () => void
+  language: Lang
+  testId?: string
+}) {
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="font-extrabold">{label}</span>
       <button
         type="button"
         role="switch"
+        data-testid={testId}
         aria-checked={on}
         onClick={onClick}
         className={`min-h-11 rounded-full px-4 font-extrabold ${on ? 'bg-grape text-white' : 'bg-cream text-ink'}`}

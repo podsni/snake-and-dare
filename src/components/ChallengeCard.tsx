@@ -43,7 +43,8 @@ export function ChallengeCard({ game }: { game: GameState }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-labelledby="challenge-title">
       <div className="absolute inset-0 bg-ink/45" />
-      <div className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl bg-cream p-4 shadow-card sm:max-w-md sm:rounded-3xl sm:p-6">
+      <div className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-[1.75rem] bg-cream p-4 shadow-card sm:max-w-md sm:rounded-3xl sm:p-6">
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-ink/15 sm:hidden" aria-hidden />
         <div className="mb-3 flex items-center gap-3">
           <span className="h-12 w-12 overflow-hidden rounded-full bg-white" style={{ boxShadow: `0 0 0 3px ${player.color}` }}>
             <Avatar id={player.avatar} label={player.name} />

@@ -79,40 +79,40 @@ function nextLog(key: CopyKey, vars: Record<string, string | number>): LogEntry 
   return { id: logSerial, key, vars }
 }
 
+function effectLogs(effect: Effect, actor: string, players: GameState['players']): LogEntry[] {
+  if (effect.type === 'roll') return [nextLog('logRoll', { name: actor, value: effect.value })]
+  if (effect.type === 'bounce') return [nextLog('logBounce', { name: actor, roll: effect.roll })]
+  if (effect.type === 'move') {
+    const to = effect.path[effect.path.length - 1]
+    return to === undefined ? [] : [nextLog('logMove', { name: actor, to })]
+  }
+  if (effect.type === 'snake') return [nextLog('logSnake', { name: actor, from: effect.from, to: effect.to })]
+  if (effect.type === 'ladder') return [nextLog('logLadder', { name: actor, from: effect.from, to: effect.to })]
+  if (effect.type === 'shield_block') return [nextLog('logShield', { name: actor })]
+  if (effect.type === 'shield_gain') return [nextLog('logShieldGain', { name: actor })]
+  if (effect.type === 'lucky' && effect.mode === 'shield') return [nextLog('logLuckyShield', { name: actor })]
+  if (effect.type === 'lucky' && effect.mode === 'steps') return [nextLog('logLuckySteps', { name: actor })]
+  if (effect.type === 'lucky') return [nextLog('logLuckyBlock', { name: actor })]
+  if (effect.type === 'mystery' && effect.mode === 'forward2') return [nextLog('logMysteryForward', { name: actor })]
+  if (effect.type === 'mystery' && effect.mode === 'back2') return [nextLog('logMysteryBack', { name: actor })]
+  if (effect.type === 'mystery' && effect.mode === 'shield') return [nextLog('logMysteryShield', { name: actor })]
+  if (effect.type === 'mystery' && effect.mode === 'points') return [nextLog('logMysteryPoints', { name: actor })]
+  if (effect.type === 'mystery') return [nextLog('logMysteryExtra', { name: actor })]
+  if (effect.type === 'double') return [nextLog('logDouble', { name: actor })]
+  if (effect.type === 'challenge') return [nextLog(effect.kind === 'truth' ? 'logTruth' : 'logDare', { name: actor })]
+  if (effect.type === 'score' && (effect.reason === 'truth' || effect.reason === 'dare')) {
+    return [nextLog('logDone', { name: actor, points: effect.amount })]
+  }
+  if (effect.type === 'skip') return [nextLog('logSkip', { name: actor })]
+  if (effect.type === 'win') return [nextLog('logWin', { name: actor })]
+  if (effect.type === 'extra_roll') return [nextLog('logExtra', { name: actor })]
+  if (effect.type === 'turn') return [nextLog('logTurn', { name: players[effect.playerIndex]?.name ?? '' })]
+  return []
+}
+
 function logsFrom(effects: Effect[], prev: GameState): LogEntry[] {
   const actor = prev.players[prev.current]?.name ?? ''
-  const items: LogEntry[] = []
-  for (const effect of effects) {
-    if (effect.type === 'roll') items.push(nextLog('logRoll', { name: actor, value: effect.value }))
-    else if (effect.type === 'bounce') items.push(nextLog('logBounce', { name: actor, roll: effect.roll }))
-    else if (effect.type === 'move') {
-      const to = effect.path[effect.path.length - 1]
-      if (to !== undefined) items.push(nextLog('logMove', { name: actor, to }))
-    } else if (effect.type === 'snake') items.push(nextLog('logSnake', { name: actor, from: effect.from, to: effect.to }))
-    else if (effect.type === 'ladder') items.push(nextLog('logLadder', { name: actor, from: effect.from, to: effect.to }))
-    else if (effect.type === 'shield_block') items.push(nextLog('logShield', { name: actor }))
-    else if (effect.type === 'shield_gain') items.push(nextLog('logShieldGain', { name: actor }))
-    else if (effect.type === 'lucky' && effect.mode === 'shield') items.push(nextLog('logLuckyShield', { name: actor }))
-    else if (effect.type === 'lucky' && effect.mode === 'steps') items.push(nextLog('logLuckySteps', { name: actor }))
-    else if (effect.type === 'lucky') items.push(nextLog('logLuckyBlock', { name: actor }))
-    else if (effect.type === 'mystery' && effect.mode === 'forward2') items.push(nextLog('logMysteryForward', { name: actor }))
-    else if (effect.type === 'mystery' && effect.mode === 'back2') items.push(nextLog('logMysteryBack', { name: actor }))
-    else if (effect.type === 'mystery' && effect.mode === 'shield') items.push(nextLog('logMysteryShield', { name: actor }))
-    else if (effect.type === 'mystery' && effect.mode === 'points') items.push(nextLog('logMysteryPoints', { name: actor }))
-    else if (effect.type === 'mystery') items.push(nextLog('logMysteryExtra', { name: actor }))
-    else if (effect.type === 'double') items.push(nextLog('logDouble', { name: actor }))
-    else if (effect.type === 'challenge') items.push(nextLog(effect.kind === 'truth' ? 'logTruth' : 'logDare', { name: actor }))
-    else if (effect.type === 'score' && (effect.reason === 'truth' || effect.reason === 'dare')) {
-      items.push(nextLog('logDone', { name: actor, points: effect.amount }))
-    } else if (effect.type === 'skip') items.push(nextLog('logSkip', { name: actor }))
-    else if (effect.type === 'win') items.push(nextLog('logWin', { name: actor }))
-    else if (effect.type === 'extra_roll') items.push(nextLog('logExtra', { name: actor }))
-    else if (effect.type === 'turn') {
-      const name = prev.players[effect.playerIndex]?.name ?? ''
-      items.push(nextLog('logTurn', { name }))
-    }
-  }
-  return items
+  return effects.flatMap((effect) => effectLogs(effect, actor, prev.players))
 }
 
 function localizeName(name: string, language: Lang): string {
@@ -321,14 +321,20 @@ export const useGame = create<GameStore>((set, get) => ({
     inflight = next
     set({ animating: true, diceRolling: true, diceValue: value, bonusRoll: false })
     const reduce = snap.settings.reduceMotion
-    const playerId = snap.game.players[snap.game.current]?.id
+    const activeGame = snap.game
+    const playerId = activeGame.players[activeGame.current]?.id
+    const actor = activeGame.players[activeGame.current]?.name ?? ''
     window.setTimeout(() => {
       if (token !== rollToken || !playerId) return
       set({ diceRolling: false })
       void (async () => {
-        const step = reduce ? 0 : 230
+        const step = reduce ? 0 : 300
+        const note = (effect: Effect) => {
+          set({ log: [...get().log, ...effectLogs(effect, actor, activeGame.players)].slice(-8) })
+        }
         for (const effect of effects) {
           if (token !== rollToken) return
+          if (effect.type !== 'move') note(effect)
           if (effect.type === 'move') {
             for (const tile of effect.path) {
               if (token !== rollToken) return
@@ -336,14 +342,15 @@ export const useGame = create<GameStore>((set, get) => ({
               if (!reduce) audio.play('step')
               if (step) await wait(step)
             }
+            note(effect)
           } else if (effect.type === 'snake') {
             set({ visual: { [playerId]: effect.to }, emotes: { ...get().emotes, [playerId]: 'sad' } })
             audio.play('snake')
-            await wait(reduce ? 0 : 420)
+            await wait(reduce ? 0 : 700)
           } else if (effect.type === 'ladder') {
             set({ visual: { [playerId]: effect.to }, emotes: { ...get().emotes, [playerId]: 'happy' } })
             audio.play('ladder')
-            await wait(reduce ? 0 : 420)
+            await wait(reduce ? 0 : 700)
           } else if (effect.type === 'bounce') {
             set({ emotes: { ...get().emotes, [playerId]: 'sad' } })
             audio.play('bounce')
@@ -373,7 +380,6 @@ export const useGame = create<GameStore>((set, get) => ({
           bonusRoll: bonus,
           savedWon: next.phase === 'won',
           hasSave: true,
-          log: [...get().log, ...logsFrom(effects, snap.game!)].slice(-8),
         })
         persist(next, get().settings)
       })()

@@ -52,6 +52,9 @@ export function GameHUD({ game, showRoll }: { game: GameState; showRoll: boolean
           </div>
         ) : null}
         <p className="mt-3 text-xs font-bold text-ink/60">{t(language, 'exactHint')}</p>
+        <div className="mt-3">
+          <EventToast />
+        </div>
       </div>
       {showRoll ? (
         <>
@@ -68,6 +71,18 @@ export function GameHUD({ game, showRoll }: { game: GameState; showRoll: boolean
         </p>
       )}
     </div>
+  )
+}
+
+export function EventToast() {
+  const language = useGame((state) => state.settings.language)
+  const log = useGame((state) => state.log)
+  const last = log[log.length - 1]
+  if (!last) return null
+  return (
+    <p key={last.id} className="animate-toast rounded-2xl bg-grape px-3 py-2 text-sm font-extrabold text-white shadow-card" aria-live="polite">
+      {t(language, last.key, last.vars)}
+    </p>
   )
 }
 
@@ -97,9 +112,12 @@ export function RollBar() {
   const rollLabel = animating ? (diceRolling ? t(language, 'rolling') : t(language, 'moving')) : bonusRoll ? t(language, 'rollAgain') : t(language, 'roll')
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/70 bg-white/95 px-3 py-2 backdrop-blur md:hidden" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+      <div className="mx-auto mb-2 max-w-3xl">
+        <EventToast />
+      </div>
       <div className="mx-auto flex max-w-3xl items-center gap-3">
         <Dice value={diceValue} rolling={diceRolling} label={rollLabel} />
-        <Button data-testid="roll-button-mobile" className="h-16 flex-1 text-lg" onClick={roll} disabled={locked}>
+        <Button data-testid="roll-button-mobile" className="h-[4.5rem] flex-1 text-xl" onClick={roll} disabled={locked}>
           {rollLabel}
         </Button>
       </div>

@@ -324,18 +324,22 @@ describe('turn order', () => {
 })
 
 describe('cards', () => {
-  it('ships 100 truths and 100 dares across every category, in both languages', () => {
+  it('ships at least 300 truths and 300 dares, with 60 or more in every category', () => {
     const cards = allCards()
     const truths = cards.filter((card) => card.type === 'truth')
     const dares = cards.filter((card) => card.type === 'dare')
-    expect(truths).toHaveLength(100)
-    expect(dares).toHaveLength(100)
+    expect(truths.length).toBeGreaterThanOrEqual(300)
+    expect(dares.length).toBeGreaterThanOrEqual(300)
     for (const category of ['funny', 'friendship', 'couple', 'family', 'mixed'] as const) {
-      expect(cardsFor('truth', category)).toHaveLength(20)
-      expect(cardsFor('dare', category)).toHaveLength(20)
+      expect(cardsFor('truth', category).length).toBeGreaterThanOrEqual(60)
+      expect(cardsFor('dare', category).length).toBeGreaterThanOrEqual(60)
     }
     const ids = new Set(cards.map((card) => card.id))
+    const english = new Set(cards.map((card) => card.text.en.trim().toLowerCase()))
+    const indonesian = new Set(cards.map((card) => card.text.id.trim().toLowerCase()))
     expect(ids.size).toBe(cards.length)
+    expect(english.size).toBe(cards.length)
+    expect(indonesian.size).toBe(cards.length)
     for (const card of cards) {
       expect(card.text.en.length).toBeGreaterThan(8)
       expect(card.text.id.length).toBeGreaterThan(8)
@@ -344,18 +348,19 @@ describe('cards', () => {
   })
 
   it('does not repeat a card until its pool is used up', () => {
+    const pool = cardsFor('truth', 'family')
     const used: string[] = []
     const seen = new Set<string>()
-    for (let i = 0; i < 20; i += 1) {
+    for (let i = 0; i < pool.length; i += 1) {
       const card = drawCard('truth', 'family', used, fixed(0))
       expect(seen.has(card.id)).toBe(false)
       seen.add(card.id)
       used.push(card.id)
     }
-    expect(seen.size).toBe(20)
+    expect(seen.size).toBe(pool.length)
     const recycled = drawCard('truth', 'family', used, fixed(0))
     expect(seen.has(recycled.id)).toBe(true)
-    expect(used.length).toBeLessThan(20)
+    expect(used.length).toBeLessThan(pool.length)
   })
 })
 

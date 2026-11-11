@@ -2,7 +2,7 @@ import { ChevronLeft, Minus, Plus } from 'lucide-react'
 import { AVATAR_IDS, PLAYER_COLORS } from '../game/types.ts'
 import type { BoardSize, Category } from '../game/types.ts'
 import { useGame } from '../store/gameStore.ts'
-import { t } from '../utils/i18n.ts'
+import { colorLabel, faceLabel, t } from '../utils/i18n.ts'
 import type { CopyKey } from '../utils/i18n.ts'
 import { Avatar } from '../components/Avatar.tsx'
 import { Button } from '../components/Button.tsx'
@@ -42,11 +42,11 @@ export function PlayerSetup() {
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-display text-xl">{t(language, 'playerCount')}</h2>
           <div className="flex items-center gap-2">
-            <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-cream" onClick={() => setCount(draft.count - 1)} aria-label="-">
+            <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-cream" onClick={() => setCount(draft.count - 1)} aria-label={t(language, 'fewerPlayers')}>
               <Minus className="h-5 w-5" />
             </button>
             <span className="w-8 text-center font-display text-3xl">{draft.count}</span>
-            <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-cream" onClick={() => setCount(draft.count + 1)} aria-label="+">
+            <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-cream" onClick={() => setCount(draft.count + 1)} aria-label={t(language, 'morePlayers')}>
               <Plus className="h-5 w-5" />
             </button>
           </div>
@@ -75,7 +75,7 @@ export function PlayerSetup() {
                   <button
                     key={id}
                     type="button"
-                    aria-label={id}
+                    aria-label={faceLabel(language, id)}
                     aria-pressed={selected}
                     onClick={() => updatePlayer(index, { avatar: id })}
                     className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-cream"
@@ -92,7 +92,7 @@ export function PlayerSetup() {
                 <button
                   key={color}
                   type="button"
-                  aria-label={color}
+                  aria-label={colorLabel(language, color)}
                   aria-pressed={player.color === color}
                   onClick={() => updatePlayer(index, { color })}
                   className="h-10 w-10 rounded-full border-2 border-white"
@@ -158,6 +158,7 @@ function BoardChoice({
   return (
     <button
       type="button"
+      data-testid={size === 50 ? 'board-50' : 'board-100'}
       aria-pressed={selected}
       onClick={() => onClick(size)}
       className={`rounded-2xl px-4 py-3 text-left ${selected ? 'bg-grape text-white' : 'bg-cream text-ink'}`}

@@ -123,8 +123,36 @@ summary {
   animation: twinkle 2.6s ease-in-out infinite;
 }
 
+@keyframes dice-land {
+  0% {
+    transform: scale(1.18) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes toast-in {
+  0% {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .animate-hop {
   animation: hop 0.48s ease-in-out infinite;
+}
+
+.animate-dice-land {
+  animation: dice-land 0.35s ease-out;
+}
+
+.animate-toast {
+  animation: toast-in 0.28s ease-out;
 }
 
 .animate-drift {

@@ -24,6 +24,9 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.lang = settings.language
+    document.title = t(settings.language, 'pageTitle')
+    const description = document.querySelector('meta[name="description"]')
+    description?.setAttribute('content', t(settings.language, 'pageBlurb'))
     document.documentElement.classList.toggle('reduce-motion', settings.reduceMotion)
     audio.sync(settings)
   }, [settings])

@@ -95,7 +95,9 @@ export function GameBoard({
           return (
             <div
               key={player.id}
-              className="absolute z-[3] transition-[left,top] duration-200"
+              className={`absolute z-[3] transition-[left,top] ease-out ${
+                emotes[player.id] === 'sad' || emotes[player.id] === 'happy' ? 'duration-700' : 'duration-300'
+              }`}
               style={{
                 left: `${left}%`,
                 top: `${top}%`,
@@ -122,6 +124,20 @@ function center(n: number, size: BoardSize): { x: number; y: number } {
   return { x: coord.col * 100 + 50, y: coord.rowFromTop * 100 + 58 }
 }
 
+function curvePoint(
+  from: { x: number; y: number },
+  c1: { x: number; y: number },
+  c2: { x: number; y: number },
+  to: { x: number; y: number },
+  t: number,
+) {
+  const u = 1 - t
+  return {
+    x: u * u * u * from.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * to.x,
+    y: u * u * u * from.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * to.y,
+  }
+}
+
 function Snake({ from, to, color }: { from: { x: number; y: number }; to: { x: number; y: number }; color: string }) {
   const dx = to.x - from.x
   const dy = to.y - from.y
@@ -129,17 +145,27 @@ function Snake({ from, to, color }: { from: { x: number; y: number }; to: { x: n
   const px = -dy / len
   const py = dx / len
   const wobble = Math.min(42, len * 0.16)
-  const path = `M ${from.x} ${from.y} C ${from.x + dx * 0.33 + px * wobble} ${from.y + dy * 0.33 + py * wobble}, ${from.x + dx * 0.66 - px * wobble} ${from.y + dy * 0.66 - py * wobble}, ${to.x} ${to.y}`
+  const c1 = { x: from.x + dx * 0.33 + px * wobble, y: from.y + dy * 0.33 + py * wobble }
+  const c2 = { x: from.x + dx * 0.66 - px * wobble, y: from.y + dy * 0.66 - py * wobble }
+  const path = `M ${from.x} ${from.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${to.x} ${to.y}`
+  const spots = [0.22, 0.4, 0.58, 0.76].map((t) => curvePoint(from, c1, c2, to, t))
+  const head = { x: from.x + px * 6, y: from.y + py * 6 }
   return (
     <g>
+      <path d={path} fill="none" stroke="#2B2144" strokeWidth="20" strokeLinecap="round" opacity="0.2" />
       <path d={path} fill="none" stroke={color} strokeWidth="16" strokeLinecap="round" />
-      <path d={path} fill="none" stroke="#fff7" strokeWidth="6" strokeLinecap="round" />
-      <circle cx={from.x + 6} cy={from.y + 4} r="13" fill={color} stroke="#2B2144" strokeWidth="2" />
-      <circle cx={from.x + 2} cy={from.y} r="2.2" fill="#fff" />
-      <circle cx={from.x + 10} cy={from.y} r="2.2" fill="#fff" />
-      <circle cx={from.x + 2} cy={from.y} r="1" fill="#2B2144" />
-      <circle cx={from.x + 10} cy={from.y} r="1" fill="#2B2144" />
-      <circle cx={to.x} cy={to.y} r="5" fill={color} />
+      <path d={path} fill="none" stroke="#fff8" strokeWidth="6" strokeLinecap="round" />
+      {spots.map((spot, index) => (
+        <circle key={index} cx={spot.x} cy={spot.y} r={index % 2 === 0 ? 4.5 : 3.2} fill="#fff" opacity="0.85" />
+      ))}
+      <circle cx={head.x} cy={head.y} r="14" fill={color} stroke="#2B2144" strokeWidth="2.4" />
+      <circle cx={head.x - 4} cy={head.y - 3} r="2.3" fill="#fff" />
+      <circle cx={head.x + 4} cy={head.y - 3} r="2.3" fill="#fff" />
+      <circle cx={head.x - 4} cy={head.y - 3} r="1.1" fill="#2B2144" />
+      <circle cx={head.x + 4} cy={head.y - 3} r="1.1" fill="#2B2144" />
+      <path d={`M ${head.x - 3} ${head.y + 4} Q ${head.x} ${head.y + 8} ${head.x + 3} ${head.y + 4}`} fill="none" stroke="#2B2144" strokeWidth="1.4" strokeLinecap="round" />
+      <path d={`M ${head.x} ${head.y + 6} L ${head.x + 3} ${head.y + 11} L ${head.x - 1} ${head.y + 8}`} fill="#FF6B6B" />
+      <circle cx={to.x} cy={to.y} r="4" fill={color} stroke="#2B2144" strokeWidth="1.5" />
     </g>
   )
 }
@@ -171,8 +197,10 @@ function Ladder({ from, to }: { from: { x: number; y: number }; to: { x: number;
   }
   return (
     <g>
-      <line x1={from.x + px} y1={from.y + py} x2={to.x + px} y2={to.y + py} stroke="#C48A4A" strokeWidth="7" strokeLinecap="round" />
-      <line x1={from.x - px} y1={from.y - py} x2={to.x - px} y2={to.y - py} stroke="#C48A4A" strokeWidth="7" strokeLinecap="round" />
+      <line x1={from.x + px} y1={from.y + py} x2={to.x + px} y2={to.y + py} stroke="#A86B32" strokeWidth="9" strokeLinecap="round" />
+      <line x1={from.x - px} y1={from.y - py} x2={to.x - px} y2={to.y - py} stroke="#A86B32" strokeWidth="9" strokeLinecap="round" />
+      <line x1={from.x + px * 0.65} y1={from.y + py * 0.65} x2={to.x + px * 0.65} y2={to.y + py * 0.65} stroke="#E8C08A" strokeWidth="3" strokeLinecap="round" />
+      <line x1={from.x - px * 0.65} y1={from.y - py * 0.65} x2={to.x - px * 0.65} y2={to.y - py * 0.65} stroke="#E8C08A" strokeWidth="3" strokeLinecap="round" />
       {lines}
     </g>
   )
